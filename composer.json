@@ -1,0 +1,64 @@
+{
+    "name": "andreighioc/ingwebpay",
+    "description": "Laravel package for processing payments through ING WebPay (ING Bank Romania e-commerce gateway)",
+    "keywords": [
+        "laravel",
+        "ing",
+        "webpay",
+        "payment",
+        "gateway",
+        "ecommerce",
+        "romania",
+        "card",
+        "visa",
+        "mastercard"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andrei Ghioc",
+            "email": "contact@andreighioc.ro"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "larastan/larastan": "^2.9",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AndreighioC\\IngWebPay\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AndreighioC\\IngWebPay\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AndreighioC\\IngWebPay\\IngWebPayServiceProvider"
+            ],
+            "aliases": {
+                "IngWebPay": "AndreighioC\\IngWebPay\\Facades\\IngWebPay"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

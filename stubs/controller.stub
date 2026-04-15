@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use AndreighioC\IngWebPay\Facades\IngWebPay;
+use AndreighioC\IngWebPay\Exceptions\IngWebPayException;
+use Illuminate\Http\Request;
+
+class IngWebPayController extends Controller
+{
+    /**
+     * Display the checkout page and initiate payment.
+     *
+     * Customize this method to fit your application's checkout flow.
+     * The amount should come from your order/cart system.
+     */
+    public function checkout(Request $request)
+    {
+        $request->validate([
+            'amount'       => 'required|numeric|min:0.01',
+            'order_number' => 'nullable|string|max:32',
+            'description'  => 'nullable|string|max:512',
+            'email'        => 'nullable|email',
+        ]);
+
+        try {
+            // Convert the decimal amount to minor units (bani / cents)
+            $amountInMinorUnits = IngWebPay::toMinorUnits((float) $request->input('amount'));
+
+            $response = IngWebPay::register(
+                amount: $amountInMinorUnits,
+                orderNumber: $request->input('order_number'),
+                description: $request->input('description'),
+                email: $request->input('email'),
+            );
+
+            if ($response->isSuccessful()) {
+                // Store the orderId in session for later verification
+                session(['ingwebpay_order_id' => $response->orderId]);
+
+                // Redirect the payer to the ING WebPay payment page
+                return redirect()->away($response->formUrl);
+            }
+
+            return back()->withErrors([
+                'payment' => $response->errorMessage ?? 'Failed to initiate payment.',
+            ]);
+
+        } catch (IngWebPayException $e) {
+            return back()->withErrors([
+                'payment' => 'Payment error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle the callback from ING WebPay after payment authorization.
+     *
+     * ING WebPay redirects the payer here with the orderId in the query string.
+     * We verify the transaction status and redirect accordingly.
+     */
+    public function callback(Request $request)
+    {
+        $orderId = $request->query('orderId')
+            ?? session('ingwebpay_order_id');
+
+        if (! $orderId) {
+            return redirect()->route('ingwebpay.failed')
+                ->with('error', 'No order ID received.');
+        }
+
+        try {
+            $status = IngWebPay::getOrderStatusExtended($orderId);
+
+            if ($status->isSuccessful()) {
+                // Clean up the session
+                session()->forget('ingwebpay_order_id');
+
+                return redirect()->route('ingwebpay.success')
+                    ->with('payment', [
+                        'order_id'     => $orderId,
+                        'order_number' => $status->orderNumber,
+                        'amount'       => $status->getAmountInMajorUnits(),
+                        'currency'     => $status->currency,
+                        'cardholder'   => $status->getCardholderName(),
+                        'pan'          => $status->getPan(),
+                    ]);
+            }
+
+            return redirect()->route('ingwebpay.failed')
+                ->with('error', $status->actionCodeDescription ?? $status->errorMessage ?? 'Payment was not successful.');
+
+        } catch (IngWebPayException $e) {
+            return redirect()->route('ingwebpay.failed')
+                ->with('error', 'Could not verify payment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the payment success page.
+     */
+    public function success()
+    {
+        return view('ingwebpay.success', [
+            'payment' => session('payment'),
+        ]);
+    }
+
+    /**
+     * Display the payment failed page.
+     */
+    public function failed()
+    {
+        return view('ingwebpay.failed', [
+            'error' => session('error', 'An unknown error occurred.'),
+        ]);
+    }
+}

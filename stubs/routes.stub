@@ -1,0 +1,36 @@
+<?php
+
+use App\Http\Controllers\IngWebPayController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| ING WebPay Routes
+|--------------------------------------------------------------------------
+|
+| These routes handle the ING WebPay payment flow:
+| - checkout  : Initiates the payment and redirects to ING WebPay
+| - callback  : Receives the redirect back from ING WebPay
+| - success   : Displays the payment success page
+| - failed    : Displays the payment failure page
+|
+| Include this file in your routes/web.php:
+|   require __DIR__ . '/ingwebpay.php';
+|
+*/
+
+Route::prefix(config('ingwebpay.route_prefix', 'ingwebpay'))
+    ->middleware(config('ingwebpay.route_middleware', ['web']))
+    ->group(function () {
+        Route::post('/checkout', [IngWebPayController::class, 'checkout'])
+            ->name('ingwebpay.checkout');
+
+        Route::get('/callback', [IngWebPayController::class, 'callback'])
+            ->name('ingwebpay.callback');
+
+        Route::get('/success', [IngWebPayController::class, 'success'])
+            ->name('ingwebpay.success');
+
+        Route::get('/failed', [IngWebPayController::class, 'failed'])
+            ->name('ingwebpay.failed');
+    });

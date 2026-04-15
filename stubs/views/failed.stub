@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="{{ app()->getLocale() }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ __('Payment Failed') }} — {{ config('app.name') }}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #f4f6f8;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.08);
+            max-width: 480px;
+            width: 100%;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        .icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #fff0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            font-size: 2rem;
+        }
+        .card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #c00;
+        }
+        .card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+        .error-box {
+            background: #fff5f5;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            color: #a00;
+            font-size: 0.9rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.7rem 2rem;
+            background: #ff6200;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s;
+            margin: 0 0.25rem;
+        }
+        .btn:hover { background: #e65800; }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #ff6200;
+            color: #ff6200;
+        }
+        .btn-outline:hover {
+            background: #ff6200;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">❌</div>
+        <h1>{{ __('Payment Failed') }}</h1>
+        <p>{{ __('Unfortunately, your payment could not be processed.') }}</p>
+
+        @if ($error)
+            <div class="error-box">{{ $error }}</div>
+        @endif
+
+        <div>
+            <a href="{{ url('/') }}" class="btn btn-outline">{{ __('Back to Homepage') }}</a>
+            <a href="{{ url()->previous() }}" class="btn">{{ __('Try Again') }}</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="{{ app()->getLocale() }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ __('Payment') }} — {{ config('app.name') }}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #f4f6f8;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.08);
+            max-width: 480px;
+            width: 100%;
+            padding: 2.5rem;
+        }
+        .card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+            color: #ff6200;
+        }
+        .card p.subtitle {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            font-size: 0.9rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color .2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6200;
+            box-shadow: 0 0 0 3px rgba(255,98,0,.12);
+        }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 0.75rem;
+            background: #ff6200;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .btn:hover { background: #e65800; }
+        .errors {
+            background: #fff0f0;
+            border: 1px solid #fcc;
+            color: #c00;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+        }
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+            justify-content: center;
+        }
+        .secure-badge svg { width: 14px; height: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔒 {{ __('Secure Payment') }}</h1>
+        <p class="subtitle">{{ __('You will be redirected to ING WebPay to complete your payment securely.') }}</p>
+
+        @if ($errors->any())
+            <div class="errors">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('ingwebpay.checkout') }}">
+            @csrf
+
+            <div class="form-group">
+                <label for="amount">{{ __('Amount') }} ({{ config('ingwebpay.currency') === '946' ? 'RON' : 'EUR' }})</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                       value="{{ old('amount') }}" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="order_number">{{ __('Order Number') }}</label>
+                <input type="text" id="order_number" name="order_number"
+                       value="{{ old('order_number') }}" placeholder="{{ __('Optional') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="description">{{ __('Description') }}</label>
+                <input type="text" id="description" name="description"
+                       value="{{ old('description') }}" placeholder="{{ __('Optional') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="email">{{ __('Email') }}</label>
+                <input type="email" id="email" name="email"
+                       value="{{ old('email') }}" placeholder="{{ __('Optional — for payment confirmation') }}">
+            </div>
+
+            <button type="submit" class="btn">{{ __('Pay Now') }}</button>
+        </form>
+
+        <div class="secure-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            {{ __('Secured by ING WebPay — ING Bank N.V. Amsterdam, Bucharest Branch') }}
+        </div>
+    </div>
+</body>
+</html>
