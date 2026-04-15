@@ -14,7 +14,12 @@ class IngWebPayServiceProvider extends PackageServiceProvider
         $package
             ->name('ingwebpay')
             ->hasConfigFile()
-            ->hasCommand(Console\InstallCommand::class);
+            ->hasCommands([
+                Console\InstallCommand::class,
+                Console\SyncPendingOrdersCommand::class,
+                Console\CheckConnectionCommand::class,
+                Console\RegisterWebhookCommand::class,
+            ]);
     }
 
     public function packageRegistered(): void
@@ -41,5 +46,10 @@ class IngWebPayServiceProvider extends PackageServiceProvider
             __DIR__ . '/../stubs/views/success.stub'  => resource_path('views/ingwebpay/success.blade.php'),
             __DIR__ . '/../stubs/views/failed.stub'   => resource_path('views/ingwebpay/failed.blade.php'),
         ], 'ingwebpay-views');
+        
+        // Add Migrations Publishing
+        $this->publishes([
+            __DIR__ . '/../database/migrations/create_ingwebpay_transactions_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_ingwebpay_transactions_table.php'),
+        ], 'ingwebpay-migrations');
     }
 }

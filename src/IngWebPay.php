@@ -26,6 +26,8 @@ class IngWebPay
     protected string $language;
     protected string $orderNumberMode;
     protected string $baseUrl;
+    protected bool $loggingEnabled;
+    protected string $logChannel;
 
     public function __construct()
     {
@@ -38,6 +40,28 @@ class IngWebPay
 
         $environment = config('ingwebpay.environment', 'test');
         $this->baseUrl = config("ingwebpay.base_urls.{$environment}");
+
+        $this->loggingEnabled = (bool) config('ingwebpay.logging.enabled', true);
+        $this->loggingEnabled = (bool) config('ingwebpay.logging.enabled', true);
+        $this->logChannel = config('ingwebpay.logging.channel', 'stack');
+    }
+
+    /**
+     * Override credentials dynamically for Multi-tenancy.
+     *
+     * @param array $credentials
+     * @return self
+     */
+    public function withCredentials(array $credentials): self
+    {
+        if (isset($credentials['username'])) {
+            $this->username = $credentials['username'];
+        }
+        if (isset($credentials['password'])) {
+            $this->password = $credentials['password'];
+        }
+        
+        return $this;
     }
 
     // -------------------------------------------------------------------------
@@ -372,19 +396,26 @@ class IngWebPay
      * @param  array   $params    Request parameters
      * @return array              Decoded JSON response
      *
-     * @throws IngWebPayException
+     * @throws \AndreighioC\IngWebPay\Exceptions\IngWebPayException
      */
     protected function sendRequest(string $endpoint, array $params): array
     {
         $url = rtrim($this->baseUrl, '/') . '/' . ltrim($endpoint, '/');
 
         try {
-            Log::debug('ING WebPay request', [
-                'endpoint' => $endpoint,
-                'params'   => array_diff_key($params, array_flip(['password'])),
-            ]);
+            if ($this->loggingEnabled) {
+                Log::channel($this->logChannel)->info('ING WebPay request', [
+                    'endpoint' => $endpoint,
+                    'params'   => array_diff_key($params, array_flip(['password'])),
+                ]);
+            }
 
+            // Retry 3 times with a 100ms delay for common network errors HTTP 500/Timeout
             $response = Http::timeout(30)
+                ->retry(3, 100, function ($exception, $request) {
+                    return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
+                           ($exception instanceof \Illuminate\Http\Client\RequestException && $exception->response->serverError());
+                })
                 ->asForm()
                 ->post($url, $params);
 
@@ -402,13 +433,28 @@ class IngWebPay
                 );
             }
 
-            Log::debug('ING WebPay response', [
-                'endpoint' => $endpoint,
-                'response' => $data,
-            ]);
+            // Parse specific ING HTTP Errors inside response JSON
+            $errorCode = (string) ($data['errorCode'] ?? $data['ErrorCode'] ?? '0');
+            if ($errorCode !== '0') {
+                if (in_array($errorCode, ['5', 'AUTH_ERROR'])) {
+                    throw \AndreighioC\IngWebPay\Exceptions\IngAuthenticationException::invalidCredentials();
+                }
+                
+                // Fallback generic exception with specific code
+                throw IngWebPayException::fromResponse($data);
+            }
+
+            if ($this->loggingEnabled) {
+                Log::channel($this->logChannel)->info('ING WebPay response', [
+                    'endpoint' => $endpoint,
+                    'response' => $data,
+                ]);
+            }
 
             return $data;
 
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+             throw \AndreighioC\IngWebPay\Exceptions\IngEndpointUnreachableException::timeout($e->getMessage(), $e);
         } catch (IngWebPayException $e) {
             throw $e;
         } catch (\Throwable $e) {

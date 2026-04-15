@@ -13,12 +13,16 @@ Supports **Laravel 10, 11, 12, and 13**.
 
 - **Full API coverage** — register (sale), registerPreAuth, getOrderStatus, getOrderStatusExtended, reverse, deposit, refund
 - **Strongly-typed DTOs** — all responses are mapped to clean data objects
-- **PHP 8.1+ enums** — `OrderStatus`, `Currency`, `Environment`
+- **PHP 8.1+ enums** — `PaymentStatus`, `OrderStatus`, `Currency`, `Environment`
 - **Plug-and-play** — `php artisan ingwebpay:install` scaffolds controller, routes, and views
+- **Database support** — Optional migrations to automatically store transactions
 - **Facade support** — use `IngWebPay::register(...)` anywhere
 - **3D Secure v2** — enforced by default via `FORCE_3DS2`
 - **Test & Production** environments with separate URL configuration
 - **Comprehensive tests** — unit + feature tests with faked HTTP
+- **Testing Mocks** — `IngWebPay::fake()` built-in for asserting payments
+- **Advanced Exceptions** — `IngAuthenticationException`, `IngEndpointUnreachableException`, etc.
+- **Auto-Retry Mechanism** — Prevents transaction loss on random network failures
 
 ---
 
@@ -45,6 +49,17 @@ This publishes:
 - `app/Http/Controllers/IngWebPayController.php` — Payment controller
 - `routes/ingwebpay.php` — Route definitions
 - `resources/views/ingwebpay/` — Checkout, success, and failure views
+
+After configuration, you can optionally publish migrations to automatically log your payments in the database:
+```bash
+php artisan vendor:publish --tag=ingwebpay-migrations
+php artisan migrate
+```
+
+Verify your credentials easily using the built-in checker:
+```bash
+php artisan ingwebpay:check-connection
+```
 
 ## Configuration
 
@@ -219,6 +234,22 @@ $status->label();          // "Deposited (authorized)"
 
 ## Testing
 
+Testing your own Application implementing ING WebPay:
+```php
+use AndreighioC\IngWebPay\Facades\IngWebPay;
+
+public function test_user_can_checkout()
+{
+    IngWebPay::fake();
+
+    $this->post('/checkout', ['product_id' => 1])
+         ->assertRedirect();
+         
+    IngWebPay::assertPaymentInitiated(10231); // Verify payment of 102.31 RON was sent!
+}
+```
+
+Testing the package directly:
 ```bash
 composer test
 ```

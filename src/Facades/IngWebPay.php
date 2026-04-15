@@ -28,6 +28,17 @@ use Illuminate\Support\Facades\Facade;
  */
 class IngWebPay extends Facade
 {
+    /**
+     * Replace the bound instance with a fake.
+     */
+    public static function fake(): \AndreighioC\IngWebPay\Testing\IngWebPayFake
+    {
+        $fake = new \AndreighioC\IngWebPay\Testing\IngWebPayFake();
+        static::swap($fake);
+
+        return $fake;
+    }
+
     protected static function getFacadeAccessor(): string
     {
         return \AndreighioC\IngWebPay\IngWebPay::class;

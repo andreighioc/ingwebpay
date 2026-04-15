@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        Schema::create('ingwebpay_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->string('order_id')->unique()->comment('ING WebPay specific order ID');
+            $table->string('order_number')->nullable()->index()->comment('Your internal order number');
+            $table->integer('amount')->comment('Amount in minor units');
+            $table->string('currency', 3)->default('946');
+            $table->string('status', 50)->default('PENDING');
+            $table->string('payer_email')->nullable();
+            $table->json('raw_response')->nullable();
+            $table->timestamp('webhook_received_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('ingwebpay_transactions');
+    }
+};

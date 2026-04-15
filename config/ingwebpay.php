@@ -120,4 +120,19 @@ return [
 
     'route_middleware' => ['web'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Logging
+    |--------------------------------------------------------------------------
+    |
+    | If enabled, the package will log all outgoing requests and their
+    | responses to help with debugging. Passwords are automatically redacted.
+    |
+    */
+
+    'logging' => [
+        'enabled' => env('INGWEBPAY_LOG_ENABLED', true),
+        'channel' => env('INGWEBPAY_LOG_CHANNEL', env('LOG_CHANNEL', 'stack')),
+    ],
+
 ];

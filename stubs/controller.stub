@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use AndreighioC\IngWebPay\Facades\IngWebPay;
+use AndreighioC\IngWebPay\Events\PaymentFailed;
+use AndreighioC\IngWebPay\Events\PaymentSuccessful;
 use AndreighioC\IngWebPay\Exceptions\IngWebPayException;
 use Illuminate\Http\Request;
 
@@ -73,6 +75,9 @@ class IngWebPayController extends Controller
             $status = IngWebPay::getOrderStatusExtended($orderId);
 
             if ($status->isSuccessful()) {
+                // Dispatch the successful event so your app can mark the order as paid
+                event(new PaymentSuccessful($status, $orderId));
+
                 // Clean up the session
                 session()->forget('ingwebpay_order_id');
 
@@ -86,6 +91,9 @@ class IngWebPayController extends Controller
                         'pan'          => $status->getPan(),
                     ]);
             }
+
+            // Dispatch the failed event
+            event(new PaymentFailed($status, $orderId));
 
             return redirect()->route('ingwebpay.failed')
                 ->with('error', $status->actionCodeDescription ?? $status->errorMessage ?? 'Payment was not successful.');
